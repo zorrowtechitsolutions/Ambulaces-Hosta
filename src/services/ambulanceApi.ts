@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://hosta-server.vercel.app/api", // change when deploying
+  baseURL: "https://www.zorrowtek.in/api", // change when deploying
   withCredentials: true,
 });
 
