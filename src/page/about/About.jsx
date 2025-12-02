@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Heart, Users, Globe, Award } from "lucide-react"
 
+
 export default function AboutPage() {
   const [authModal, setAuthModal] = useState(null)
 
