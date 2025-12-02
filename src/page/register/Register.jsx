@@ -1,7 +1,7 @@
 "use client"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import RegisterForm from "@/components/register-form"
+import Header from "@/components/Header"
+import Footer from "@/components/Footer"
+import RegisterForm from "@/components/Register-form"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
