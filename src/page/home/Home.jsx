@@ -1,10 +1,10 @@
 import React from 'react'
 
 
-import Header from "@/components/header"
-import HeroSection from "@/components/hero-section"
-import AmbulanceListings from "@/components/ambulance-listings"
-import Footer from "@/components/footer"
+import Header from "@/components/Header"
+import HeroSection from "@/components/Hero-section"
+import AmbulanceListings from "@/components/Ambulance-listings"
+import Footer from "@/components/Footer"
 
 export default function Home() {
 
