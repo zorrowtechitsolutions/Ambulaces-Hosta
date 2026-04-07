@@ -124,7 +124,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-green border-t shadow-lg">
+          <div className="md:hidden bg-green border-t shadow-lg text-white">
             <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3">
               <Home size={18} className="inline mr-2" /> Home
             </Link>
