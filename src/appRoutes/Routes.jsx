@@ -32,7 +32,7 @@ export default function AppRoutes() {
           
           <Route path="/about" element={<AboutPage />} />
           <Route path="/service" element={<ServicesPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
 
 
 

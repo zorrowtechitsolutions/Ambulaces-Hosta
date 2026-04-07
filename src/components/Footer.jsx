@@ -1,6 +1,6 @@
 "use client"
 
-import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin } from "lucide-react"
+import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from "lucide-react"
 
 export default function Footer() {
   return (
@@ -105,21 +105,20 @@ export default function Footer() {
 
         {/* Social Links */}
         <div className="flex justify-center gap-4 md:gap-6 mb-6 md:mb-8 py-6 md:py-8 border-t border-secondary-foreground/20">
-          <a href="#" className="opacity-80 hover:opacity-100 transition">
+          <a href="https://www.facebook.com/share/16VZQu8Ad6/" className="opacity-80 hover:opacity-100 transition">
             <Facebook size={18} />
           </a>
-          <a href="#" className="opacity-80 hover:opacity-100 transition">
-            <Twitter size={18} />
+          <a href="https://www.instagram.com/hostahealthcare?utm_source=qr&igsh=YTFzbHYzbnQ0aDg0" className="opacity-80 hover:opacity-100 transition">
+            <Instagram size={18} />
           </a>
-          <a href="#" className="opacity-80 hover:opacity-100 transition">
-            <Linkedin size={18} />
-          </a>
+     
         </div>
 
         {/* Copyright */}
         <div className="text-center text-xs md:text-sm opacity-80 border-t border-secondary-foreground/20 pt-6 md:pt-8">
-          <p>&copy; 2025 Hosta - Emergency Ambulance Services. All rights reserved.</p>
-        </div>
+<p>
+  &copy; {new Date().getFullYear()} Hosta - Emergency Ambulance Services. All rights reserved.
+</p>        </div>
       </div>
     </footer>
   )

@@ -98,9 +98,9 @@ export default function Header() {
               </div>
             ) : (
               <>
-                <Button onClick={() => navigate("/sign-in")} variant="ghost" className="text-white cursor-pointer">
+                {/* <Button onClick={() => navigate("/sign-in")} variant="ghost" className="text-white cursor-pointer">
                   Sign In
-                </Button>
+                </Button> */}
                 <Button onClick={() => navigate("/sign-up")} className="bg-green-600 text-white cursor-pointer">
                   Register Service
                 </Button>

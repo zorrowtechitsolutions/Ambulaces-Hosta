@@ -2,10 +2,14 @@
 
 import { MapPin, Clock, Shield, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom";
 
 
 
-export default function HeroSection({ onRegisterClick }) {
+export default function HeroSection() {
+
+  const Navigate = useNavigate('/sign-in');
+
   return (
     <section className="relative bg-[#ECFDF5] from-slate-50 via-blue-50 to-cyan-50 py-12 md:py-24 overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-3xl -z-10"></div>
@@ -38,7 +42,7 @@ export default function HeroSection({ onRegisterClick }) {
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 size="lg"
-                onClick={onRegisterClick}
+                onClick={() => Navigate('/sign-up')}
                 className="bg-green-600 from-primary to-secondary cursor-pointer hover:bg-green-800 text-white font-bold shadow-lg text-base w-full sm:w-auto"
               >
                 Register Ambulance
