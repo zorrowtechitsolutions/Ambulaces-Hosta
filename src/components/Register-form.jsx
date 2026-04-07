@@ -1,29 +1,41 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Building, MapPin, Phone, Mail, Lock, Ambulance, Eye, EyeOff } from "lucide-react"
-import { useRegisterAmbulanceMutation } from "@/app/service/ambulance"
-import { toast } from "sonner"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Building,
+  MapPin,
+  Phone,
+  Ambulance,
+  Home,
+  MapPinned
+} from "lucide-react";
+import {
+  useRegisterAmbulanceMutation
+} from "@/app/service/ambulance";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterForm() {
-  const [serviceName, setServiceName] = useState("")
-  const [address, setAddress] = useState("")
-  const [latitude, setLatitude] = useState("")
-  const [longitude, setLongitude] = useState("")
-  const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [vehicleType, setVehicleType] = useState("van")
-  
-  const [showPassword, setShowPassword] = useState(false)
-  const [errors, setErrors] = useState({})
-  const [currentStep, setCurrentStep] = useState(1)
   const navigate = useNavigate();
-  
-  const [registerAmbulance, { isLoading }] = useRegisterAmbulanceMutation()
+
+  // Basic Info (only fields that exist in backend)
+  const [serviceName, setServiceName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [vehicleType, setVehicleType] = useState("van");
+
+  // Address fields (nested object as per backend schema)
+  const [address, setAddress] = useState({
+    country: "",
+    state: "",
+    district: "",
+    place: "",
+    pincode: ""
+  });
+
+  const [errors, setErrors] = useState({});
+  const [registerAmbulance, { isLoading }] = useRegisterAmbulanceMutation();
 
   const vehicleTypes = [
     { value: "van", label: "Ambulance Van" },
@@ -32,360 +44,238 @@ export default function RegisterForm() {
     { value: "air", label: "Air Ambulance" },
     { value: "icu", label: "ICU Ambulance" },
     { value: "basic", label: "Basic Life Support" }
-  ]
+  ];
 
-  const validateStep = (step) => {
-    const newErrors = {}
+  // Handle address field changes
+  const handleAddressChange = (field, value) => {
+    setAddress(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    // Clear error for this field
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ""
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!serviceName.trim())
+      newErrors.serviceName = "Service name required";
     
-    if (step === 1) {
-      if (!serviceName.trim()) {
-        newErrors.serviceName = "Service name is required"
-      }
-      if (!address.trim()) {
-        newErrors.address = "Address is required"
-      }
-      if (!phone.trim()) {
-        newErrors.phone = "Phone number is required"
-      } else if (!/^\d{10,15}$/.test(phone.replace(/\D/g, ''))) {
-        newErrors.phone = "Please enter a valid phone number"
-      }
-      if (!vehicleType) {
-        newErrors.vehicleType = "Vehicle type is required"
-      }
-      if (!email.trim()) {
-        newErrors.email = "Email is required"
-      } else if (!/\S+@\S+\.\S+/.test(email)) {
-        newErrors.email = "Email is invalid"
-      }
-    }
+    if (!address.place.trim())
+      newErrors.place = "Place is required";
     
-    if (step === 2) {
-      if (!password) {
-        newErrors.password = "Password is required"
-      } else if (password.length < 6) {
-        newErrors.password = "Password must be at least 6 characters"
-      }
-    }
+    if (!address.pincode)
+      newErrors.pincode = "Pincode required";
+    else if (!/^\d{6}$/.test(address.pincode.toString()))
+      newErrors.pincode = "Invalid pincode (6 digits)";
+    
+    if (!phone.trim())
+      newErrors.phone = "Phone number required";
+    else if (!/^\d{10}$/.test(phone.replace(/\D/g, '')))
+      newErrors.phone = "Invalid phone number (10 digits)";
+    
+    if (!vehicleType)
+      newErrors.vehicleType = "Vehicle type required";
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => prev + 1)
-    }
-  }
-
-  const prevStep = () => {
-    setCurrentStep(prev => prev - 1)
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!validateStep(2)) {
-      return
-    }
+    e.preventDefault();
+
+    if (!validateForm()) return;
 
     try {
-      // Send data directly without wrapping in formData
-      const result = await registerAmbulance({
-        serviceName,
-        address,
-        latitude,
-        longitude,
-        phone,
-        email,
-        password,
-        vehicleType
-      }).unwrap()
-      
-      console.log("Registration response:", result)
-      
-      // Check for success message from backend
-      if (result.message && result.message.includes("successfully")) {
-        toast.success("Registration successful!")
-        // Reset form
-        setServiceName("")
-        setAddress("")
-        setLatitude("")
-        setLongitude("")
-        setPhone("")
-        setEmail("")
-        setPassword("")
-        setVehicleType("van")
-        setCurrentStep(1)
-        
-        // Navigate to sign-in page
-        navigate("/sign-in")
+      // Prepare data matching backend schema EXACTLY
+      const ambulanceData = {
+        serviceName: serviceName.trim(),
+        address: {
+          country: address.country || undefined,
+          state: address.state || undefined,
+          district: address.district || undefined,
+          place: address.place.trim(),
+          pincode: parseInt(address.pincode)
+        },
+        phone: phone.trim(),
+        vehicleType: vehicleType
+      };
+
+
+      const result = await registerAmbulance(ambulanceData).unwrap();
+
+      if (result.message?.includes("success") || result.status === 200) {
+        toast.success("Registration successful!");
+        navigate("/");
       } else {
-        toast.error(result.message || "Registration failed")
+        toast.error(result.message || "Registration failed");
       }
     } catch (error) {
-      console.error("Registration error:", error)
-      toast.error(error?.data?.message || "An error occurred during registration")
+      console.error("Registration error:", error);
+      toast.error(error?.data?.message || "Registration error occurred");
     }
-  }
+  };
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-6 ">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="bg-primary/10 p-3 rounded-full">
-            <Ambulance className="h-8 w-8 text-primary" />
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-green-50 to-blue-50 py-8">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-5 sm:p-8">
+        {/* Header */}
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex justify-center mb-4">
+            <div className="bg-green-100 p-3 rounded-full">
+              <Ambulance className="h-6 w-6 sm:h-8 sm:w-8 text-green-700" />
+            </div>
           </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-green-800">
+            Register Ambulance Service
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Join our emergency network
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-green-800 mb-2">Register Ambulance Service</h1>
-        <p className="text-muted-foreground">Join our emergency response network</p>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step 1: Service Details */}
-        {currentStep === 1 && (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Service Name *</label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                  <Input
-                    value={serviceName}
-                    onChange={(e) => setServiceName(e.target.value)}
-                    placeholder="Enter your ambulance service name"
-                    className={`pl-11 h-12 text-base border-2 bg-background ${
-                      errors.serviceName 
-                        ? "border-destructive focus:border-destructive" 
-                        : "border-border focus:border-primary"
-                    }`}
-                    required
-                  />
-                </div>
-                {errors.serviceName && (
-                  <p className="text-sm text-destructive">{errors.serviceName}</p>
-                )}
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Service Name */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">
+              Service Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Building size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={serviceName}
+                onChange={(e) => setServiceName(e.target.value)}
+                className={`w-full pl-10 pr-3 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm sm:text-base ${
+                  errors.serviceName ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="e.g., City Ambulance Service"
+              />
+            </div>
+            {errors.serviceName && (
+              <p className="text-xs text-red-500">{errors.serviceName}</p>
+            )}
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Vehicle Type *</label>
-                <select
-                  value={vehicleType}
-                  onChange={(e) => setVehicleType(e.target.value)}
-                  className={`w-full h-12 px-3 border-2 rounded-md bg-background text-foreground focus:outline-none focus:border-primary ${
-                    errors.vehicleType ? "border-destructive" : "border-border"
-                  }`}
-                  required
-                >
-                  <option value="">Select vehicle type</option>
-                  {vehicleTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.vehicleType && (
-                  <p className="text-sm text-destructive">{errors.vehicleType}</p>
-                )}
-              </div>
+          {/* Address Section */}
+          <div className="space-y-3 bg-gray-50 p-3 sm:p-4 rounded-lg">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <MapPinned size={16} />
+              Address Details <span className="text-red-500">*</span>
+            </label>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Address *</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                  <Input
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Full service address"
-                    className={`pl-11 h-12 text-base border-2 bg-background ${
-                      errors.address 
-                        ? "border-destructive focus:border-destructive" 
-                        : "border-border focus:border-primary"
-                    }`}
-                    required
-                  />
-                </div>
-                {errors.address && (
-                  <p className="text-sm text-destructive">{errors.address}</p>
-                )}
-              </div>
+            {/* Place - Required */}
+            <div className="relative">
+              <Home size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={address.place}
+                onChange={(e) => handleAddressChange("place", e.target.value)}
+                className={`w-full pl-10 pr-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm ${
+                  errors.place ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="Place / Locality *"
+              />
+            </div>
+            {errors.place && <p className="text-xs text-red-500">{errors.place}</p>}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Latitude</label>
-                  <Input
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    placeholder="e.g., 10.163153"
-                    className="h-12 text-base border-2 border-border bg-background focus:border-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Longitude</label>
-                  <Input
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    placeholder="e.g., 76.641271"
-                    className="h-12 text-base border-2 border-border bg-background focus:border-primary"
-                  />
-                </div>
-              </div>
+            {/* District */}
+            <input
+              value={address.district}
+              onChange={(e) => handleAddressChange("district", e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              placeholder="District"
+            />
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Phone Number *</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                  <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Enter phone number"
-                    className={`pl-11 h-12 text-base border-2 bg-background ${
-                      errors.phone 
-                        ? "border-destructive focus:border-destructive" 
-                        : "border-border focus:border-primary"
-                    }`}
-                    required
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Email Address *</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                  <Input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    placeholder="your@email.com"
-                    className={`pl-11 h-12 text-base border-2 bg-background ${
-                      errors.email 
-                        ? "border-destructive focus:border-destructive" 
-                        : "border-border focus:border-primary"
-                    }`}
-                    required
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
+            {/* State & Country Row */}
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                value={address.state}
+                onChange={(e) => handleAddressChange("state", e.target.value)}
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                placeholder="State"
+              />
+              <input
+                value={address.country}
+                onChange={(e) => handleAddressChange("country", e.target.value)}
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                placeholder="Country"
+              />
             </div>
 
-            <Button
-              type="button"
-              onClick={nextStep}
-              className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-900 cursor-pointer"
+            {/* Pincode - Required */}
+            <div className="relative">
+              <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="number"
+                value={address.pincode}
+                onChange={(e) => handleAddressChange("pincode", e.target.value)}
+                className={`w-full pl-10 pr-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm ${
+                  errors.pincode ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="Pincode *"
+              />
+            </div>
+            {errors.pincode && <p className="text-xs text-red-500">{errors.pincode}</p>}
+          </div>
+
+          {/* Phone */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={`w-full pl-10 pr-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm ${
+                  errors.phone ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="Phone number *"
+              />
+            </div>
+            {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+          </div>
+
+          {/* Vehicle Type */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">
+              Vehicle Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+              className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm ${
+                errors.vehicleType ? "border-red-500" : "border-gray-300"
+              }`}
             >
-              Continue to Account Setup
-            </Button>
+              {vehicleTypes.map(v => (
+                <option key={v.value} value={v.value}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+            {errors.vehicleType && <p className="text-xs text-red-500">{errors.vehicleType}</p>}
           </div>
-        )}
 
-        {/* Step 2: Account Setup */}
-        {currentStep === 2 && (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Password *</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                  <Input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Create a secure password"
-                    className={`pl-11 pr-11 h-12 text-base border-2 bg-background ${
-                      errors.password 
-                        ? "border-destructive focus:border-destructive" 
-                        : "border-border focus:border-primary"
-                    }`}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Password must be at least 6 characters long
-                </p>
-              </div>
-            </div>
-
-            {/* Terms & Conditions */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  required 
-                  className="mt-1 w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-offset-1" 
-                />
-                <span className="text-sm text-foreground">
-                  I confirm that all information provided is accurate and I have the authority to register this ambulance service.
-                </span>
-              </label>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  required 
-                  className="mt-1 w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-offset-1" 
-                />
-                <span className="text-sm text-foreground">
-                  I agree to comply with all local emergency service regulations and platform terms of service.
-                </span>
-              </label>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                className="flex-1 h-12"
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 h-12 text-base font-semibold"
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    Registering...
-                  </div>
-                ) : (
-                  "Complete Registration"
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-      </form>
-
-      {/* Sign In Link */}
-      <div className="mt-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <button
-            onClick={() => navigate("/sign-in")}
-            className="text-green-800 cursor-pointer hover:text-primary/80 font-medium transition-colors"
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2.5 sm:py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm sm:text-base font-medium mt-4"
           >
-            Sign in
-          </button>
-        </p>
+            {isLoading ? "Registering..." : "Register"}
+          </Button>
+        </form>
+
+   
       </div>
     </div>
-  )
+  );
 }
